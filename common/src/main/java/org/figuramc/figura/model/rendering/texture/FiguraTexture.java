@@ -107,27 +107,44 @@ public class FiguraTexture extends SimpleTexture {
 
     @Override
     public void apply(TextureContents textureContents) {
+        // MC resource reload — old GPU texture was released, force re-upload
+        isClosed = false;
+        dirty = true;
         uploadIfDirty(false, false);
     }
 
     public void closeFromRenderThread() {
-        Minecraft.getInstance().execute(this::close);
+        Minecraft.getInstance().execute(this::destroy);
     }
 
     @Override
     public void close() {
-        // Make sure it doesn't close twice (minecraft tries to close the texture when reloading textures
-        if (isClosed) return;
+        // Called by MC during resource reload — only release GPU resources.
+        // Keep NativeImage alive so apply() can re-upload the texture.
+        registered = false;
+        // Remove from TextureManager BEFORE releasing GPU resources to prevent
+        // lookups returning a texture with a null textureView (causes crash with ImmediatelyFast)
+        ((TextureManagerAccessor) Minecraft.getInstance().getTextureManager()).getByPath().remove(this.getLocation());
+        super.close();
+    }
 
+    /**
+     * Full cleanup — closes NativeImage pixel data and unregisters from TextureManager.
+     * Called when Figura is permanently done with this texture (avatar unload).
+     * Does NOT release GPU resources (texture/textureView) to avoid crashing
+     * in-flight render batches that may still reference this texture's view.
+     * GPU resources will be freed by GC via MC's Cleaner mechanism.
+     */
+    public void destroy() {
+        if (isClosed) return;
         isClosed = true;
 
-        // Close native images
         if (nativeImageTexture != null)
             nativeImageTexture.close();
         if (backup != null)
             backup.close();
 
-        super.close();
+        registered = false;
         ((TextureManagerAccessor) Minecraft.getInstance().getTextureManager()).getByPath().remove(this.getLocation());
     }
 

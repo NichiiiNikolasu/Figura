@@ -145,13 +145,19 @@ public abstract class FiguraRenderer {
         for (FiguraTextureSet set : textureSets)
             set.clean();
         for (FiguraTexture texture : customTextures.values())
-            texture.close();
+            texture.closeFromRenderThread();
     }
 
     public void invalidate() {
         this.dirty = true;
-        if (!this.isRendering)
-            clean();
+        if (!this.isRendering) {
+            // Always defer clean() to the render thread to avoid destroying
+            // textures while ImmediatelyFast still has batched draw references
+            Minecraft.getInstance().execute(() -> {
+                this.dirty = false;
+                clean();
+            });
+        }
     }
 
     public void sortParts() {

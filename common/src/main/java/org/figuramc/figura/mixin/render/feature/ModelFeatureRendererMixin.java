@@ -1,5 +1,7 @@
 package org.figuramc.figura.mixin.render.feature;
 
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -16,6 +18,10 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 // this method runs callbacks for Models before and after rendering, as well as before animation setup if they exist
 @Mixin(ModelFeatureRenderer.class)
@@ -67,5 +73,12 @@ public class ModelFeatureRendererMixin {
             callback.run();
 
         callBackExtension.figura$getPostRenderingCallbacks().clear();
+    }
+
+    // Defensive copy: Figura callbacks during renderModel can indirectly cause new
+    // translucent model submissions, modifying the list while it's being iterated.
+    @WrapOperation(method = "renderTranslucents", at = @At(value = "INVOKE", target = "Ljava/util/List;iterator()Ljava/util/Iterator;"))
+    private Iterator<?> figura$safeTranslucentIterator(List<?> list, Operation<Iterator<?>> original) {
+        return new ArrayList<>(list).iterator();
     }
 }

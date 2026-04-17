@@ -35,6 +35,7 @@
     "font.BakedSheetGlyphMixin",
     "font.BitmapGlyphMixin",
     "font.FontAccessor",
+    "font.FontSet$SelectedGlyphsAccessor",
     "font.FontSet$SourceAccessor",
     "font.FontSetMixin",
     "font.GlyphStitcherAccessor",
