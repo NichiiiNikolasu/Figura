@@ -198,8 +198,10 @@ public class ImmediateFiguraRenderer extends FiguraRenderer {
         }
 
         this.isRendering = false;
-        if (this.dirty)
+        if (this.dirty) {
+            this.dirty = false;
             clean();
+        }
 
         return prev - Math.max(remainingComplexity[0], 0);
     }

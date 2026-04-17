@@ -2,7 +2,6 @@ package org.figuramc.figura.mixin.font;
 
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.gui.font.glyphs.BakedSheetGlyph;
-import org.figuramc.figura.compat.ImmediatelyFastCompat;
 import org.figuramc.figura.ducks.BakedGlyphAccessor;
 import org.figuramc.figura.font.EmojiContainer;
 import org.figuramc.figura.font.EmojiMetadata;
@@ -58,7 +57,7 @@ public abstract class BakedSheetGlyphMixin implements BakedGlyphAccessor {
         float n = italic ? 1.0f - 0.25f * j : 0f;
         float q = bold ? 0.1F : 0.0F;
 
-        final float singleWidth = 8f / ImmediatelyFastCompat.getFontWidthIMF();
+        final float singleWidth = (u1 - u0) / figura$metadata.frames;
         float shift = singleWidth * figura$metadata.getCurrentFrame();
 
         float u = u0 + shift;

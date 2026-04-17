@@ -5,9 +5,13 @@ import com.mojang.blaze3d.font.GlyphProvider;
 import com.mojang.blaze3d.font.UnbakedGlyph;
 import net.minecraft.client.gui.font.FontSet;
 import net.minecraft.client.gui.font.GlyphStitcher;
+import net.minecraft.client.gui.font.glyphs.BakedGlyph;
 import net.minecraft.client.gui.font.providers.BitmapProvider;
+import org.figuramc.figura.ducks.BakedGlyphAccessor;
 import org.figuramc.figura.ducks.BitmapProviderGlyphAccessor;
 import org.figuramc.figura.ducks.GlyphStitcherExtension;
+import org.figuramc.figura.font.Emojis;
+import org.figuramc.figura.font.EmojiContainer;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -21,6 +25,7 @@ import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Supplier;
 
 @Mixin(FontSet.class)
 public abstract class FontSetMixin {
@@ -45,6 +50,31 @@ public abstract class FontSetMixin {
 
         if (unbakedGlyph != null) {
             ((GlyphStitcherExtension) stitcher).addCodePoint(unbakedGlyph.info(), codePoint);
+        }
+    }
+
+    // The GlyphStitcher HashMap approach above doesn't work for all glyphs because
+    // GlyphInfo.simple() creates lambda instances with no equals/hashCode.
+    // This fallback ensures emoji metadata is always set by force-baking after computeGlyphInfo.
+    @Inject(method = "computeGlyphInfo", at = @At("RETURN"))
+    public void afterComputeGlyphInfo(int codePoint, CallbackInfoReturnable<?> cir) {
+        if (!figura$isEmojiFont()) return;
+        Object result = cir.getReturnValue();
+        if (result == null) return;
+        EmojiContainer container = Emojis.getCategoryByFont(((GlyphStitcherAccessor) stitcher).getName());
+        if (container == null) return;
+
+        FontSet$SelectedGlyphsAccessor accessor = (FontSet$SelectedGlyphsAccessor) result;
+        figura$setupEmojiOnGlyph(accessor.figura$getAny(), container, codePoint);
+        figura$setupEmojiOnGlyph(accessor.figura$getNonFishy(), container, codePoint);
+    }
+
+    @Unique
+    private void figura$setupEmojiOnGlyph(Supplier<BakedGlyph> supplier, EmojiContainer container, int codePoint) {
+        if (supplier == null) return;
+        BakedGlyph glyph = supplier.get();
+        if (glyph instanceof BakedGlyphAccessor bakedAccessor) {
+            bakedAccessor.figura$setupEmoji(container, codePoint);
         }
     }
 
