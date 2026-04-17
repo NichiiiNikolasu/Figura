@@ -35,8 +35,11 @@ public class GlyphStitcherMixin implements GlyphStitcherExtension {
     public BakedSheetGlyph insertDataIntoBakedGlyph(FontTexture instance, GlyphInfo glyphInfo, GlyphBitmap glyphBitmap) {
         BakedSheetGlyph glyph = instance.add(glyphInfo, glyphBitmap);
 
-        if (figura$isEmojiFont() && glyph != null && figura$codePoints.containsKey(glyphInfo)) {
-            ((BakedGlyphAccessor) glyph).figura$setupEmoji(Emojis.getCategoryByFont(texturePrefix), figura$codePoints.get(glyphInfo));
+        if (figura$isEmojiFont() && glyph != null) {
+            ((BakedGlyphAccessor) glyph).figura$setGlyphPixelWidth(glyphBitmap.getPixelWidth());
+            if (figura$codePoints.containsKey(glyphInfo)) {
+                ((BakedGlyphAccessor) glyph).figura$setupEmoji(Emojis.getCategoryByFont(texturePrefix), figura$codePoints.get(glyphInfo));
+            }
         }
 
         return glyph;
